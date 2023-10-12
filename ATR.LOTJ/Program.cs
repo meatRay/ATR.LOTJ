@@ -1,7 +1,8 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using ATR.LOTJ;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
-Dictionary<Planet, Dictionary<Resource, double>> source = new() {
+Dictionary<Planet, ResourcesGraph> source = new() {
     [new("Arkania", new(47, 34), 0.15)] = new() {
         [Resource.Common] = 31.2,
         [Resource.Electronics] = 26.00,
@@ -9,12 +10,12 @@ Dictionary<Planet, Dictionary<Resource, double>> source = new() {
         [Resource.Precious] = 56.00,
     },
     [new("Ryloth", new(53, 21), 0.20)] = new() {
-        [Resource.Common] = 33.6,
-        [Resource.Electronics] = 38.5,
-        [Resource.Food] = 25.7,
-        [Resource.Precious] = 56.69,
-        [Resource.Spice] = 91.40,
-        [Resource.Water] = 19.28,
+        [Resource.Common] = 33.60,
+        [Resource.Electronics] = 38.50,
+        [Resource.Food] = 25.70,
+        [Resource.Precious] = 56.40,
+        [Resource.Spice] = 93.71,
+        [Resource.Water] = 19.90,
         [Resource.Weapons] = 36.00,
     },
     [new("Wroona", new(29, 35), 0.20)] = new() {
@@ -30,12 +31,12 @@ Dictionary<Planet, Dictionary<Resource, double>> source = new() {
         [Resource.Food] = 11.00,
     },
     [new("Corellia", new(2, 19), 0.20)] = new() {
-        [Resource.Common] = 19.07,
-        [Resource.Electronics] = 38.90,
-        [Resource.Food] = 23.8,
-        [Resource.Precious] = 73.6,
-        [Resource.Spice] = 105.2,
-        [Resource.Weapons] = 54.5,
+        [Resource.Common] = 19.97,
+        [Resource.Electronics] = 38.55,
+        [Resource.Food] = 23.56,
+        [Resource.Precious] = 73.60,
+        [Resource.Spice] = 118.92,
+        [Resource.Weapons] = 54.50,
     },
     [new("Alderaan", new(18, -4), 0.20)] = new() {
         [Resource.Common] = 29.9,
@@ -44,29 +45,37 @@ Dictionary<Planet, Dictionary<Resource, double>> source = new() {
         [Resource.Precious] = 72.6,
     },
     [new("Coruscant", new(0, 0), 0.20)] = new() {
-        [Resource.Common] = 28.90,
-        [Resource.Electronics] = 26.59,
+        [Resource.Common] = 28.66,
+        [Resource.Electronics] = 27.04,
         [Resource.Food] = 23.80,
-        [Resource.Spice] = 199.0,//110.0,
-        [Resource.Water] = 23.1,
+        [Resource.Spice] = 110.83,
+        [Resource.Water] = 23.10,
     },
     [new("Kashyyyk", new(35, 49), 0.15)] = new() {
-        [Resource.Common] = 30.30,
-        [Resource.Electronics] = 38.90,
-        [Resource.Food] = 11.00,
+        [Resource.Common] = 28.33,
+        [Resource.Electronics] = 38.85,
+        [Resource.Food] = 13.54,
     },
     [new("Mon Calamari", new(59, 50), 0.20)] = new() {
         [Resource.Common] = 27.36,
         [Resource.Electronics] = 26.00,
         [Resource.Water] = 6.12,
     },
-    [new("Nal Hutta", new(81, 45), 0.05)] = new() {
-        [Resource.Common] = 30.5,
-        [Resource.Electronics] = 39.2,
-        [Resource.Food] = 28.3,
-        [Resource.Precious] = 71.1,
-        [Resource.Spice] = 76.04,
-        [Resource.Weapons] = 51.4,
+    [new("Nal Hutta", new(81, 45), 0.20)] = new() {
+        [Resource.Common] = 30.50,
+        [Resource.Electronics] = 39.20,
+        [Resource.Food] = 28.30,
+        [Resource.Precious] = 71.10,
+        [Resource.Spice] = 76.00,
+        [Resource.Weapons] = 51.40,
+    },
+    [new("Tatooine", new(59, 68), 0.15)] = new() {
+        [Resource.Common] = 19.97,
+        [Resource.Electronics] = 38.80,
+        [Resource.Food] = 36.62,
+        [Resource.Spice] = 90.44,
+        [Resource.Water] = 18.80,
+        [Resource.Weapons] = 53.60,
     },
 };
 List<Route> routes = new();
@@ -80,11 +89,15 @@ foreach (var planet_a in source)
         if (planet_a.Key == planet_b.Key)
             continue;
         Route? found = null;
-        foreach (var resource_a in planet_a.Value)
+        for (var resource_a = Resource.Min; resource_a < Resource.Max; resource_a = (Resource)((int)resource_a << 1))
+        //foreach (var resource_a in planet_a.Value)
         {
-            if (planet_b.Value.TryGetValue(resource_a.Key, out var resource_b))
+            if (planet_a.Value[resource_a] is double.NaN)
+                continue;
+
+            if (planet_b.Value[resource_a] != double.NaN)
             {
-                if (resource_a.Value > resource_b)
+                if (resource_a[Resource_a] > resource_b)
                     continue;
                 var trying = new Route(
                         resource_a.Key,
@@ -113,8 +126,6 @@ foreach (var k in source.Keys)
 }
 
 
-enum Resource { Common, Electronics, Food, Precious, Spice, Water, Weapons }
-record Planet(string Name, Vector2 Position, double TaxRate);
 record GoingRate(double Cost, Planet Source);
 record Route(Resource Resource, GoingRate Buy, GoingRate Sell)
 {
