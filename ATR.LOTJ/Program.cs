@@ -1,15 +1,28 @@
 ﻿using ATR.LOTJ;
+using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
-Dictionary<Planet, ResourcesGraph> source = new() {
-    [new("Arkania", new(47, 34), 0.15)] = new() {
+PlanetShape arkania     = new(new(47, 34), 0.15);
+PlanetShape ryloth      = new(new(47, 34), 0.15);
+PlanetShape wroona      = new(new(29, 35), 0.20);
+PlanetShape ithor       = new(new(20, 17), 0.20);
+PlanetShape corellia    = new(new(02, 19), 0.20);
+PlanetShape coruscant   = new(new(00, 00), 0.20);
+PlanetShape alderaan    = new(new(18, -4), 0.20);
+PlanetShape nalhutta    = new(new(81, 45), 0.20);
+PlanetShape moncalamari = new(new(59, 50), 0.20);
+PlanetShape tatooine    = new(new(59, 68), 0.15);
+PlanetShape kashyyyk    = new(new(35, 49), 0.15);
+
+Span<PlanetResources> world = stackalloc PlanetResources[] {
+    new(arkania){
         [Resource.Common] = 31.2,
         [Resource.Electronics] = 26.00,
         [Resource.Food] = 23.90,
         [Resource.Precious] = 56.00,
     },
-    [new("Ryloth", new(53, 21), 0.20)] = new() {
+    new(ryloth) {
         [Resource.Common] = 33.60,
         [Resource.Electronics] = 38.50,
         [Resource.Food] = 25.70,
@@ -18,13 +31,19 @@ Dictionary<Planet, ResourcesGraph> source = new() {
         [Resource.Water] = 19.90,
         [Resource.Weapons] = 36.00,
     },
-    [new("Wroona", new(29, 35), 0.20)] = new() {
+    new(wroona){
         [Resource.Common] = 30.4,
         [Resource.Electronics] = 38.80,
         [Resource.Precious] = 68.53,
         [Resource.Spice] = 98.4,
         [Resource.Water] = 7.31,
     },
+    new(ithor),
+    new(corellia),
+    new(alderaan),
+    new(coruscant),
+};
+Dictionary<PlanetShape, ResourceChart> source = new() {
     [new("Ithor", new(20, 17), 0.20)] = new() {
         [Resource.Common] = 28.8,
         [Resource.Electronics] = 39.7,
@@ -78,65 +97,23 @@ Dictionary<Planet, ResourcesGraph> source = new() {
         [Resource.Weapons] = 53.60,
     },
 };
-List<Route> routes = new();
-Dictionary<Planet, Dictionary<Planet, Route>> bests = new();
-foreach (var planet_a in source)
+
+var planets =
+
+foreach (var kvp in source)
 {
-    Dictionary<Planet, Route> forthis = new();
-    bests.Add(planet_a.Key, forthis);
-    foreach (var planet_b in source)
+    PlanetResources sourceresource = new(kvp.Key, kvp.Value);
+
+}
+
+void Visit(in PlanetResources from)
+{
+    for (Resource r = Resource.Common; r <= Resource.Weapons; ++r)
     {
-        if (planet_a.Key == planet_b.Key)
-            continue;
-        Route? found = null;
-        for (var resource_a = Resource.Min; resource_a < Resource.Max; resource_a = (Resource)((int)resource_a << 1))
-        //foreach (var resource_a in planet_a.Value)
+        foreach (var kvp in source)
         {
-            if (planet_a.Value[resource_a] is double.NaN)
-                continue;
-
-            if (planet_b.Value[resource_a] != double.NaN)
-            {
-                if (resource_a[Resource_a] > resource_b)
-                    continue;
-                var trying = new Route(
-                        resource_a.Key,
-                        new GoingRate(resource_a.Value, planet_a.Key),
-                        new GoingRate(resource_b, planet_b.Key));
-                //if (routes.Any(r => r.Similar(trying)))
-                //continue;
-                routes.Add(trying);
-                if (found is null || trying.ProfitPerTrip > found.ProfitPerTrip)
-                    found = trying;
-            }
+            PlanetResources destresource = new(kvp.Key, kvp.Value);
+            var route = from.RouteFor(r, in destresource);
         }
-        if (found is not null)
-            forthis.Add(planet_b.Key, found);
     }
-}
-
-foreach (var k in source.Keys)
-{
-    var best = bests[k].Values.OrderByDescending(m => m.ProfitPerTrip);
-    Console.WriteLine($"[ {k.Name} ]");
-    foreach (var r in best.Take(5))
-    {
-        Console.WriteLine($"{r.Distance:0}\t-> {r.ProfitPerTrip:0.00} : {r.Sell.Source.Name}\t{r.Resource}");
-    }
-}
-
-
-record GoingRate(double Cost, Planet Source);
-record Route(Resource Resource, GoingRate Buy, GoingRate Sell)
-{
-    public double TotalProfit { get; } = (1.0 - Sell.Source.TaxRate) * 9500 * Math.Abs(Buy.Cost - Sell.Cost);
-    public double Distance { get; } = Vector2.Distance(Buy.Source.Position, Sell.Source.Position);
-    public double Time => (Distance < 60 ? 5.0 : 10) + (0.1111 * Distance);
-    public double ProfitPerSpace => TotalProfit / Distance;
-    public double ProfitPerTrip => TotalProfit / Time;
-
-    public bool Similar(Route other)
-        => Resource == other.Resource && Sell.Source == other.Sell.Source && Buy.Source == other.Buy.Source;
-
-    public override string ToString() => $"{Resource}, {Buy.Source.Name}->{Sell.Source.Name}, {ProfitPerTrip}";
 }
