@@ -1,119 +1,158 @@
 ﻿using ATR.LOTJ;
+using System;
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
-PlanetShape arkania     = new(new(47, 34), 0.15);
-PlanetShape ryloth      = new(new(47, 34), 0.15);
-PlanetShape wroona      = new(new(29, 35), 0.20);
-PlanetShape ithor       = new(new(20, 17), 0.20);
-PlanetShape corellia    = new(new(02, 19), 0.20);
-PlanetShape coruscant   = new(new(00, 00), 0.20);
-PlanetShape alderaan    = new(new(18, -4), 0.20);
-PlanetShape nalhutta    = new(new(81, 45), 0.20);
-PlanetShape moncalamari = new(new(59, 50), 0.20);
-PlanetShape tatooine    = new(new(59, 68), 0.15);
-PlanetShape kashyyyk    = new(new(35, 49), 0.15);
+ShipOptions ship = new(9500, 40, 40);
+SearchOptions config = new(9000);
 
-Span<PlanetResources> world = stackalloc PlanetResources[] {
-    new(arkania){
-        [Resource.Common] = 31.2,
-        [Resource.Electronics] = 26.00,
-        [Resource.Food] = 23.90,
+PlanetShape arkania = new(new(47, 34), 0.05);
+PlanetShape ryloth = new(new(53, 21), 0.20);
+PlanetShape wroona = new(new(29, 35), 0.20);
+PlanetShape ithor = new(new(20, 17), 0.20);
+PlanetShape corellia = new(new(02, 19), 0.20);
+PlanetShape coruscant = new(new(00, 00), 0.20);
+PlanetShape alderaan = new(new(18, -4), 0.20);
+PlanetShape nalhutta = new(new(81, 45), 0.20);
+PlanetShape moncalamari = new(new(59, 50), 0.20);
+PlanetShape tatooine = new(new(59, 68), 0.15);
+PlanetShape kashyyyk = new(new(35, 49), 0.15);
+
+Dictionary<PlanetShape, string> names = new() {
+    [arkania] = "Arkania",
+    [ryloth] = "Ryloth",
+    [wroona] = "Wroona",
+    [ithor] = "Ithor",
+    [corellia] = "Corellia",
+    [coruscant] = "Coruscant",
+    [alderaan] = "Alderaan",
+    [nalhutta] = "Nal Hutta",
+    [moncalamari] = "Mon Calamari",
+    [tatooine] = "Tatooine",
+    [kashyyyk] = "Kashyyyk",
+};
+ReadOnlySpan<PlanetResources> world = stackalloc PlanetResources[] {
+    new(arkania) {
+        [Resource.Common] = 29.24,
+        [Resource.Electronics] = 29.89,
+        [Resource.Food] = 22.17,
         [Resource.Precious] = 56.00,
     },
     new(ryloth) {
         [Resource.Common] = 33.60,
         [Resource.Electronics] = 38.50,
         [Resource.Food] = 25.70,
-        [Resource.Precious] = 56.40,
-        [Resource.Spice] = 93.71,
-        [Resource.Water] = 19.90,
+        [Resource.Precious] = 56.69,
+        [Resource.Spice] = 91.40,
+        [Resource.Water] = 19.51,
         [Resource.Weapons] = 36.00,
     },
-    new(wroona){
+    new(wroona) {
         [Resource.Common] = 30.4,
         [Resource.Electronics] = 38.80,
-        [Resource.Precious] = 68.53,
-        [Resource.Spice] = 98.4,
-        [Resource.Water] = 7.31,
+        [Resource.Precious] = 68.80,
+        [Resource.Spice] = 102.82,
+        [Resource.Water] = 6.57,
     },
-    new(ithor),
-    new(corellia),
-    new(alderaan),
-    new(coruscant),
-};
-Dictionary<PlanetShape, ResourceChart> source = new() {
-    [new("Ithor", new(20, 17), 0.20)] = new() {
+    new(ithor) {
         [Resource.Common] = 28.8,
-        [Resource.Electronics] = 39.7,
-        [Resource.Food] = 11.00,
+        [Resource.Electronics] = 39.11,
+        [Resource.Food] = 12.08,
     },
-    [new("Corellia", new(2, 19), 0.20)] = new() {
-        [Resource.Common] = 19.97,
-        [Resource.Electronics] = 38.55,
-        [Resource.Food] = 23.56,
+    new(corellia) {
+        [Resource.Common] = 19.27,
+        [Resource.Electronics] = 38.26,
+        [Resource.Food] = 23.80,
         [Resource.Precious] = 73.60,
-        [Resource.Spice] = 118.92,
+        [Resource.Spice] = 113.61,
         [Resource.Weapons] = 54.50,
     },
-    [new("Alderaan", new(18, -4), 0.20)] = new() {
+    new(alderaan) {
         [Resource.Common] = 29.9,
         [Resource.Electronics] = 38.8,
-        [Resource.Food] = 11.00,
+        [Resource.Food] = 12.16,
         [Resource.Precious] = 72.6,
     },
-    [new("Coruscant", new(0, 0), 0.20)] = new() {
-        [Resource.Common] = 28.66,
-        [Resource.Electronics] = 27.04,
+    new(coruscant) {
+        [Resource.Common] = 28.90,
+        [Resource.Electronics] = 28.35,
         [Resource.Food] = 23.80,
-        [Resource.Spice] = 110.83,
+        [Resource.Spice] = 109.98,
         [Resource.Water] = 23.10,
     },
-    [new("Kashyyyk", new(35, 49), 0.15)] = new() {
-        [Resource.Common] = 28.33,
-        [Resource.Electronics] = 38.85,
-        [Resource.Food] = 13.54,
+    new(kashyyyk) {
+        [Resource.Common] = 30.30,
+        [Resource.Electronics] = 37.96,
+        [Resource.Food] = 12.98,
     },
-    [new("Mon Calamari", new(59, 50), 0.20)] = new() {
-        [Resource.Common] = 27.36,
+    new(moncalamari) {
+        [Resource.Common] = 27.63,
         [Resource.Electronics] = 26.00,
-        [Resource.Water] = 6.12,
+        [Resource.Water] = 6.33,
     },
-    [new("Nal Hutta", new(81, 45), 0.20)] = new() {
+    new(nalhutta) {
         [Resource.Common] = 30.50,
         [Resource.Electronics] = 39.20,
         [Resource.Food] = 28.30,
-        [Resource.Precious] = 71.10,
-        [Resource.Spice] = 76.00,
+        [Resource.Precious] = 70.44,
+        [Resource.Spice] = 77.46,
         [Resource.Weapons] = 51.40,
     },
-    [new("Tatooine", new(59, 68), 0.15)] = new() {
-        [Resource.Common] = 19.97,
-        [Resource.Electronics] = 38.80,
-        [Resource.Food] = 36.62,
-        [Resource.Spice] = 90.44,
-        [Resource.Water] = 18.80,
+    new(tatooine) {
+        [Resource.Common] = 19.92,
+        [Resource.Electronics] = 38.38,
+        [Resource.Food] = 25.30,
+        [Resource.Spice] = 90.50,
+        [Resource.Water] = 18.73,
         [Resource.Weapons] = 53.60,
-    },
+    }
 };
 
-var planets =
-
-foreach (var kvp in source)
+Span<Travel> bestroutes = stackalloc Travel[8];
+for (int i = 0; i < world.Length; ++i)
 {
-    PlanetResources sourceresource = new(kvp.Key, kvp.Value);
+    Console.WriteLine($"=== {names[world[i].Where]}\t===");
 
-}
-
-void Visit(in PlanetResources from)
-{
     for (Resource r = Resource.Common; r <= Resource.Weapons; ++r)
     {
-        foreach (var kvp in source)
+        for (int k = 0; k < world.Length; ++k)
         {
-            PlanetResources destresource = new(kvp.Key, kvp.Value);
-            var route = from.RouteFor(r, in destresource);
+            if (i == k)
+                continue;
+            Travel route = world[i].RouteFor(r, in world[k], force_forward: true);
+            if (route != default)
+            {
+                var profit = route.ProfitPerTime;
+                if (profit < config.MinProfit)
+                    continue;
+                for (int l = 0; l < bestroutes.Length; ++l)
+                    if (bestroutes[l].ProfitPerTime < profit)
+                    {
+                        if (l + 1 < bestroutes.Length)
+                            bestroutes[l..^1].CopyTo(bestroutes[(l + 1)..]);
+                        bestroutes[l] = route;
+                        break;
+                    }
+            }
         }
+    }
+    for (int k = 0; k < bestroutes.Length; ++k)
+    {
+        ref var route = ref bestroutes[k];
+        if (route == default)
+            break;
+        Console.WriteLine($"{route.ProfitPerTime:N0} : {route.Resource} -> {names[route.Market]}");
+        route = default;
+    }
+    Console.WriteLine();
+}
+
+class Engine
+{
+
+    void Move()
+    {
+
     }
 }
