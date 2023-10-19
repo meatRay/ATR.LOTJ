@@ -4,6 +4,56 @@ using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
+ColorGraph colors = new();
+Console.Write("First Color: ");
+int firstx = int.Parse(Console.ReadLine()!);
+Console.Write("Second Color: ");
+int secondx = int.Parse(Console.ReadLine()!);
+//Console.Write("Item Name: ");
+//string text = Console.ReadLine()!;
+
+ColorSpace startspace = colors.Decompile(firstx);//new(1, 1, 1);//colors.Decompile(firstx);
+ColorSpace endspace = colors.Decompile(secondx);// new(3, 2, 2);//colors.Decompile(secondx);
+
+var firstxx = colors.Compile(in startspace);
+var secondxx = colors.Compile(in endspace);
+
+int xcode = 0;
+//ColorDither dither = new(startspace, endspace, text.Length);
+var tokencount = ColorSpace.Magnitude(endspace - startspace) + 1;
+Span<ColorSpace> spaces = stackalloc ColorSpace[tokencount];
+ColorDither dither = new(startspace, endspace, tokencount);
+
+ColorSpace last = dither.SmallandMove();
+spaces[0] = last;
+for (int i = 1; i < spaces.Length;)
+{
+    ColorSpace space = dither.SmallandMove();
+    ColorSpace delta = space - last;
+    spaces[i++] = space;
+    if (space == endspace)
+        break;
+}
+for (int i = 0; i < spaces.Length; ++i)
+{
+    Console.Write($"&{colors.Compile(spaces[i]):000}");
+    Console.Write((char)('a' + i));
+}
+Console.WriteLine();
+var travel = endspace - startspace;
+dither = new(startspace, endspace, 1 + int.Max(int.Abs(travel.Red), int.Max(int.Abs(travel.Green), int.Abs(travel.Blue))));
+for (int i = 0; i < dither.Length; ++i)
+{
+    ColorSpace space = dither.TakeandMove();
+
+    var trycode = colors.Compile(in space);
+    if (trycode != xcode)
+        Console.Write($"&{trycode:000}");
+    Console.Write((char)('a' + i));
+    xcode = trycode;
+}
+return;
+
 ShipOptions ship = new(9500, 40, 40);
 SearchOptions config = new(9000);
 
@@ -43,9 +93,9 @@ ReadOnlySpan<PlanetResources> world = stackalloc PlanetResources[] {
         [Resource.Common] = 33.60,
         [Resource.Electronics] = 38.50,
         [Resource.Food] = 25.70,
-        [Resource.Precious] = 56.69,
-        [Resource.Spice] = 91.40,
-        [Resource.Water] = 19.51,
+        [Resource.Precious] = 56.62,
+        [Resource.Spice] = 90.72,
+        [Resource.Water] = 19.79,
         [Resource.Weapons] = 36.00,
     },
     new(wroona) {
@@ -61,11 +111,11 @@ ReadOnlySpan<PlanetResources> world = stackalloc PlanetResources[] {
         [Resource.Food] = 12.08,
     },
     new(corellia) {
-        [Resource.Common] = 19.27,
-        [Resource.Electronics] = 38.26,
+        [Resource.Common] = 17.38,
+        [Resource.Electronics] = 38.90,
         [Resource.Food] = 23.80,
         [Resource.Precious] = 73.60,
-        [Resource.Spice] = 113.61,
+        [Resource.Spice] = 112.23,
         [Resource.Weapons] = 54.50,
     },
     new(alderaan) {
@@ -76,7 +126,7 @@ ReadOnlySpan<PlanetResources> world = stackalloc PlanetResources[] {
     },
     new(coruscant) {
         [Resource.Common] = 28.90,
-        [Resource.Electronics] = 28.35,
+        [Resource.Electronics] = 26.61,
         [Resource.Food] = 23.80,
         [Resource.Spice] = 109.98,
         [Resource.Water] = 23.10,
@@ -101,7 +151,7 @@ ReadOnlySpan<PlanetResources> world = stackalloc PlanetResources[] {
     },
     new(tatooine) {
         [Resource.Common] = 19.92,
-        [Resource.Electronics] = 38.38,
+        [Resource.Electronics] = 46.00,
         [Resource.Food] = 25.30,
         [Resource.Spice] = 90.50,
         [Resource.Water] = 18.73,
@@ -109,6 +159,8 @@ ReadOnlySpan<PlanetResources> world = stackalloc PlanetResources[] {
     }
 };
 
+
+//Console.ReadLine();
 Span<Travel> bestroutes = stackalloc Travel[8];
 for (int i = 0; i < world.Length; ++i)
 {
