@@ -1,103 +1,111 @@
 ﻿using ATR.LOTJ;
 using System;
 using System.Collections;
+using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.InteropServices.Marshalling;
-using Terminal.Gui;
 
 ColorGraph colors = new();
-Console.Write("First Color\t: ");
-int firstx = int.Parse(Console.ReadLine()!);
-Console.Write("Second Color\t: ");
-int secondx = int.Parse(Console.ReadLine()!);
-Console.Write("Item Name\t: ");
-string text = Console.ReadLine()!;
 
-ColorSpace startspace = colors.Decompile(firstx);//new(1, 1, 1);//colors.Decompile(firstx);
-ColorSpace endspace = colors.Decompile(secondx);// new(3, 2, 2);//colors.Decompile(secondx);
+InputData<int> firstcolor = new(0), secondcolor = new(0);
+OptionsFrame options = new("Steps",
+    new FrameOption[] {
+        new("First Color", new InputFrame<int>("First Color: ", firstcolor)),
+        new("Second Color", new InputFrame<int>("Second Color: ", secondcolor)),
+        new("Calculate", new ComplexFrame(Calculate)),
+        new("Quit", new SimpleFrame(SimpleWork.Quit))
+    });
 
-var firstxx = colors.Compile(in startspace);
-var secondxx = colors.Compile(in endspace);
-
-int xcode = 0;
-//ColorDither dither = new(startspace, endspace, text.Length);
-var tokencount = ColorSpace.Magnitude(endspace - startspace) + 1;
-Span<ColorSpace> spaces = stackalloc ColorSpace[tokencount];
-
-static void RunOn(ColorDither dither, ColorGraph graph)
+UICanvas canvas = new(options);
+canvas.LoadTop();
+do
 {
+    canvas.Step();
+} while (canvas.Alive);
+
+void Calculate(UICanvas canvas)
+{
+    ColorSpace startspace = colors.Decompile(firstcolor.Value);
+    ColorSpace endspace = colors.Decompile(secondcolor.Value);
+
+    var tokencount = ColorSpace.Magnitude(endspace - startspace) + 1;
+    Span<ColorSpace> spaces = stackalloc ColorSpace[tokencount];
+
+    static void RunOn(ColorDither dither, ColorGraph graph)
+    {
+        Console.Write('\t');
+        for (int i = 0; i < dither.Length; ++i)
+        {
+            Console.Write($"\x1b[38;5;{graph.Compile(dither.SmallandMove())}m");
+            Console.Write((char)('a' + i));
+        }
+        Console.WriteLine("\x1b[0m");
+    }
+    static void CodesOn(ColorDither dither, ColorGraph graph)
+    {
+        Console.Write('\t');
+        for (int i = 0; i < dither.Length; ++i)
+        {
+            Console.Write($"&{graph.Compile(dither.SmallandMove()):000}");
+            Console.Write((char)('a' + i));
+        }
+        Console.WriteLine();
+    }
+
+    Console.WriteLine("Path of MAX magnitude");
+    Console.WriteLine("RED -> GREEN -> BLUE");
+    RunOn(new(startspace, endspace, tokencount, ColorOrient.RedGreen), colors);
+    CodesOn(new(startspace, endspace, tokencount, ColorOrient.RedGreen), colors);
+
+    Console.WriteLine("GREEN -> BLUE -> RED");
+    RunOn(new(startspace, endspace, tokencount, ColorOrient.GreenBlue), colors);
+    CodesOn(new(startspace, endspace, tokencount, ColorOrient.GreenBlue), colors);
+
+    Console.WriteLine("BLUE -> RED -> GREEN");
+    RunOn(new(startspace, endspace, tokencount, ColorOrient.BlueRed), colors);
+    CodesOn(new(startspace, endspace, tokencount, ColorOrient.BlueRed), colors);
+
+    Console.WriteLine("GREEN -> RED -> BLUE");
+    RunOn(new(startspace, endspace, tokencount, ColorOrient.GreenRed), colors);
+    CodesOn(new(startspace, endspace, tokencount, ColorOrient.GreenRed), colors);
+
+    Console.WriteLine("RED -> BLUE -> GREEN");
+    RunOn(new(startspace, endspace, tokencount, ColorOrient.RedBlue), colors);
+    CodesOn(new(startspace, endspace, tokencount, ColorOrient.RedBlue), colors);
+
+    Console.WriteLine("BLUE -> GREEN -> RED");
+    RunOn(new(startspace, endspace, tokencount, ColorOrient.BlueGreen), colors);
+    CodesOn(new(startspace, endspace, tokencount, ColorOrient.BlueGreen), colors);
+    Console.WriteLine();
+
+    int xcode = default;
+    var travel = endspace - startspace;
+    ColorDither dither = new(startspace, endspace, 1 + int.Max(int.Abs(travel.Red), int.Max(int.Abs(travel.Green), int.Abs(travel.Blue))));
+    Console.WriteLine("Path of MIN magnitude");
     Console.Write('\t');
     for (int i = 0; i < dither.Length; ++i)
     {
-        Console.Write($"\x1b[38;5;{graph.Compile(dither.SmallandMove())}m");
+        ColorSpace space = dither.TakeandMove();
+
+        var trycode = colors.Compile(in space);
+        Console.Write($"\x1b[38;5;{trycode}m");
         Console.Write((char)('a' + i));
+        xcode = trycode;
     }
     Console.WriteLine("\x1b[0m");
-}
-static void CodesOn(ColorDither dither, ColorGraph graph)
-{
+    dither = new(startspace, endspace, 1 + int.Max(int.Abs(travel.Red), int.Max(int.Abs(travel.Green), int.Abs(travel.Blue))));
     Console.Write('\t');
     for (int i = 0; i < dither.Length; ++i)
     {
-        Console.Write($"&{graph.Compile(dither.SmallandMove()):000}");
+        ColorSpace space = dither.TakeandMove();
+
+        var trycode = colors.Compile(in space);
+        if (trycode != xcode)
+            Console.Write($"&{trycode:000}");
         Console.Write((char)('a' + i));
+        xcode = trycode;
     }
-    Console.WriteLine();
-}
-
-Console.WriteLine("Path of MAX magnitude");
-Console.WriteLine("RED -> GREEN -> BLUE");
-RunOn(new(startspace, endspace, tokencount, ColorOrient.RedGreen), colors);
-CodesOn(new(startspace, endspace, tokencount, ColorOrient.RedGreen), colors);
-
-Console.WriteLine("GREEN -> BLUE -> RED");
-RunOn(new(startspace, endspace, tokencount, ColorOrient.GreenBlue), colors);
-CodesOn(new(startspace, endspace, tokencount, ColorOrient.GreenBlue), colors);
-
-Console.WriteLine("BLUE -> RED -> GREEN");
-RunOn(new(startspace, endspace, tokencount, ColorOrient.BlueRed), colors);
-CodesOn(new(startspace, endspace, tokencount, ColorOrient.BlueRed), colors);
-
-Console.WriteLine("GREEN -> RED -> BLUE");
-RunOn(new(startspace, endspace, tokencount, ColorOrient.GreenRed), colors);
-CodesOn(new(startspace, endspace, tokencount, ColorOrient.GreenRed), colors);
-
-Console.WriteLine("RED -> BLUE -> GREEN");
-RunOn(new(startspace, endspace, tokencount, ColorOrient.RedBlue), colors);
-CodesOn(new(startspace, endspace, tokencount, ColorOrient.RedBlue), colors);
-
-Console.WriteLine("BLUE -> GREEN -> RED");
-RunOn(new(startspace, endspace, tokencount, ColorOrient.BlueGreen), colors);
-CodesOn(new(startspace, endspace, tokencount, ColorOrient.BlueGreen), colors);
-Console.WriteLine();
-
-
-var travel = endspace - startspace;
-ColorDither dither = new(startspace, endspace, 1 + int.Max(int.Abs(travel.Red), int.Max(int.Abs(travel.Green), int.Abs(travel.Blue))));
-Console.WriteLine("Path of MIN magnitude");
-Console.Write('\t');
-for (int i = 0; i < dither.Length; ++i)
-{
-    ColorSpace space = dither.TakeandMove();
-
-    var trycode = colors.Compile(in space);
-    Console.Write($"\x1b[38;5;{trycode}m");
-    Console.Write((char)('a' + i));
-    xcode = trycode;
-}
-Console.WriteLine("\x1b[0m");
-dither = new(startspace, endspace, 1 + int.Max(int.Abs(travel.Red), int.Max(int.Abs(travel.Green), int.Abs(travel.Blue))));
-Console.Write('\t');
-for (int i = 0; i < dither.Length; ++i)
-{
-    ColorSpace space = dither.TakeandMove();
-
-    var trycode = colors.Compile(in space);
-    if (trycode != xcode)
-        Console.Write($"&{trycode:000}");
-    Console.Write((char)('a' + i));
-    xcode = trycode;
 }
 
 //Application.Run<LotJWindow>();
