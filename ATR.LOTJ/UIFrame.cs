@@ -10,13 +10,15 @@ using System.Threading.Tasks;
 namespace ATR.LOTJ;
 class UICanvas(Frame tree)
 {
-    public Frame? At { get; private set; }
+    readonly Stack<Frame> _at = new();
+    public Frame? At => _at.Count > 0 ? _at.Peek() : null;
     public bool Alive { get; private set; }
 
     [MemberNotNull(nameof(At))]
     public void LoadTop()
     {
-        At = tree;
+        _at.Clear();
+        _at.Push(tree);
         Alive = true;
     }
 
@@ -57,7 +59,9 @@ class UICanvas(Frame tree)
                 ok = true;
             }
         } while (!ok);
-        LoadTop();
+        if (_at.Count > 1)
+            _at.Pop();
+        //LoadTop();
     }
     void HandleOption(OptionsFrame options)
     {
@@ -74,14 +78,16 @@ class UICanvas(Frame tree)
             if (int.TryParse(Console.ReadLine(), out var parse) && parse > 0 && parse <= options.Options.Count)
                 num = parse - 1;
         } while (num < 0);
-        At = options.Options[num].Goal;
+        _at.Push(options.Options[num].Goal);
     }
 
     void HandleComplex(ComplexFrame frame)
     {
         frame.Work(this);
         Console.ReadLine();
-        LoadTop();
+        //LoadTop();
+        if (_at.Count > 1)
+            _at.Pop();
     }
 
     void HandleSimple(SimpleFrame frame)
@@ -89,8 +95,13 @@ class UICanvas(Frame tree)
         switch (frame.Work)
         {
             case SimpleWork.Quit: Alive = false; break;
-            default: LoadTop(); break;
+            case SimpleWork.Back: _at.Pop(); break;
+            default:
+                if (_at.Count > 1)
+                    _at.Pop();
+                break;//LoadTop(); break;
         }
+        _at.Pop();
     }
 }
 abstract record Frame;
@@ -102,11 +113,11 @@ class InputData<TShape>(TShape initial)
 }
 record InputFrame<TShape>(string Text, InputData<TShape> Data) : Frame
      where TShape : IParsable<TShape>;
-enum SimpleWork { None, Quit }
+enum SimpleWork { None, Quit, Back }
 record SimpleFrame(SimpleWork Work) : Frame;
 delegate void ComplexWork(UICanvas canvas);
 record ComplexFrame(ComplexWork Work) : Frame;
-readonly record struct FrameOption(string Text, Frame Goal);
+readonly record struct FrameOption(string Text, Frame Goal, char Key = default);
 record OptionsFrame(string Text, IReadOnlyList<FrameOption> Options)
     : Frame;
 record SequenceFrame(SayFrame Parent, IReadOnlyList<SayFrame> Sequence)

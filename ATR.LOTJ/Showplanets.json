@@ -1,0 +1,12 @@
+﻿[
+  {
+    "Name": "Arkania",
+    "Tax": 0.20,
+    "Resources": [ 0, 0, 0, 0, 0, 0, 0 ]
+  },
+  {
+    "Name": "Corellia",
+    "Tax": 0.20,
+    "Resources": [ 0, 0, 0, 0, 0, 0, 0 ]
+  }
+]
